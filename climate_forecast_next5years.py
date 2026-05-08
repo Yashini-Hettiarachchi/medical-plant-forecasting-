@@ -27,7 +27,7 @@ def forecast_column(df, col, forecast_until='2030-12-31', freq='D', city='Colomb
     train = data[data['ds'] < split_date]
     test = data[data['ds'] >= split_date]
     # Fit model on train
-    model = Prophet(yearly_seasonality=True, daily_seasonality=False)
+    model = Prophet(yearly_seasonality=True, daily_seasonality=False, n_changepoints=10)
     model.fit(train)
     # Forecast for test period
     future_test = model.make_future_dataframe(periods=len(test), freq=freq)
@@ -57,7 +57,7 @@ def forecast_column(df, col, forecast_until='2030-12-31', freq='D', city='Colomb
     test_out['yhat'] = forecast_test['yhat'].values
     test_out.to_csv(f'test_forecast_{col}.csv', index=False)
     # Retrain on all data for future forecast
-    model_full = Prophet(yearly_seasonality=True, daily_seasonality=False)
+    model_full = Prophet(yearly_seasonality=True, daily_seasonality=False, n_changepoints=10)
     model_full.fit(data)
     # Calculate number of days to forecast until 2030-12-31
     last_date = data['ds'].max()
