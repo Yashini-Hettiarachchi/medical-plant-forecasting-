@@ -4,6 +4,12 @@
 
 Climate change is expected to significantly impact the distribution and suitability of medicinal plants in Sri Lanka. This project aims to forecast future climate conditions and predict the suitability of different habitats for medicinal plants up to the year 2030, supporting conservation and sustainable use.
 
+
+## Models Used
+
+- **Prophet** (by Meta/Facebook): For time series forecasting of temperature and precipitation.
+- **Rule-based Classifier**: For predicting plant group suitability based on precipitation thresholds and habitat/region types.
+
 ## Methodology
 
 1. **Data Collection & Preprocessing**
