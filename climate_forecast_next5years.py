@@ -1,103 +1,82 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from prophet import Prophet
-import os
-
-# Load the dataset
-FILENAME = 'SriLanka_Weather_Dataset.csv'
-df = pd.read_csv(FILENAME)
-
-# Parse date column
-if 'time' in df.columns:
-    df['time'] = pd.to_datetime(df['time'])
-else:
-    raise ValueError("No 'time' column found in dataset.")
-
-# Forecasting function
-
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-import numpy as np
 
-def forecast_column(df, col, forecast_until='2030-12-31', freq='D', city='Colombo', test_years=2, metrics_dict=None):
+# 1. Configuration & Loading
+FILENAME = 'SriLanka_Weather_Dataset.csv'
+TARGET_DATE = '2030-12-31'
+df = pd.read_csv(FILENAME)
+df['time'] = pd.to_datetime(df['time'])
+
+def run_forecast(df, col, city="Sri Lanka"):
+    print(f"\n--- Processing: {col} ---")
+    
     # Prepare data for Prophet
-    data = df[['time', col]].rename(columns={'time': 'ds', col: 'y'})
-    data = data.dropna()
-    # Train-test split (last N years for test)
-    split_date = data['ds'].max() - pd.DateOffset(years=test_years)
+    data = df[['time', col]].rename(columns={'time': 'ds', col: 'y'}).dropna()
+    
+    # Train-Test Split (Last 2 years for validation)
+    split_date = data['ds'].max() - pd.DateOffset(years=2)
     train = data[data['ds'] < split_date]
     test = data[data['ds'] >= split_date]
-    # Fit model on train
+
+    # Initialize and Fit Model
     model = Prophet(yearly_seasonality=True, daily_seasonality=False, n_changepoints=10)
     model.fit(train)
-    # Forecast for test period
-    future_test = model.make_future_dataframe(periods=len(test), freq=freq)
+
+    # 2. Validation (Test Set)
+    # Generate dates for the test period
+    future_test = model.make_future_dataframe(periods=len(test), freq='D')
     forecast_test = model.predict(future_test)
-    # Align forecast and test
-    forecast_test = forecast_test.set_index('ds').loc[test['ds']]
-    # Evaluation
-    mae = mean_absolute_error(test['y'], forecast_test['yhat'])
-    rmse = np.sqrt(mean_squared_error(test['y'], forecast_test['yhat']))
-    print(f"{col} Test MAE: {mae:.3f}, RMSE: {rmse:.3f}")
-    if metrics_dict is not None:
-        metrics_dict[col] = {'MAE': mae, 'RMSE': rmse}
-    # Plot test results
-    plt.figure(figsize=(12, 6))
-    plt.plot(train['ds'], train['y'], label='Train')
-    plt.plot(test['ds'], test['y'], label='Test', color='orange')
-    plt.plot(test['ds'], forecast_test['yhat'], label='Predicted (Test)', color='red')
-    plt.xlabel('Date')
-    plt.ylabel(col)
-    plt.title(f'{col} Train/Test Split and Prediction ({city})')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(f'train_test_{col}.png')
-    plt.close()
-    # Save test forecast
-    test_out = test.copy()
-    test_out['yhat'] = forecast_test['yhat'].values
-    test_out.to_csv(f'test_forecast_{col}.csv', index=False)
-    # Retrain on all data for future forecast
-    model_full = Prophet(yearly_seasonality=True, daily_seasonality=False, n_changepoints=10)
-    model_full.fit(data)
-    # Calculate number of days to forecast until 2030-12-31
-    last_date = data['ds'].max()
-    forecast_end = pd.to_datetime(forecast_until)
-    periods = (forecast_end - last_date).days
-    if periods <= 0:
-        print(f"Warning: Dataset already extends beyond {forecast_until}. No future forecast needed.")
-        return
-    future = model_full.make_future_dataframe(periods=periods, freq=freq)
-    forecast = model_full.predict(future)
-    # Plot full forecast
-    plt.figure(figsize=(12, 6))
-    plt.plot(data['ds'], data['y'], label='Historical')
-    plt.plot(forecast['ds'], forecast['yhat'], label='Forecast', color='red')
-    plt.xlabel('Date')
-    plt.ylabel(col)
-    plt.title(f'{col} Forecast for {city} (to {forecast_until})')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(f'forecast_{col}_to_{forecast_until}.png')
-    plt.close()
-    # Save forecast
-    forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_csv(f'forecast_{col}_to_{forecast_until}.csv', index=False)
-    print(f"Forecast for {col} saved as forecast_{col}_to_{forecast_until}.csv and forecast_{col}_to_{forecast_until}.png")
-    print(f"Train/test plot saved as train_test_{col}.png, test forecast as test_forecast_{col}.csv")
+    
+    # Merge to align actuals and predictions on the same date
+    results = pd.merge(test, forecast_test[['ds', 'yhat']], on='ds')
+    
+    # Calculate Metrics
+    mae = mean_absolute_error(results['y'], results['yhat'])
+    rmse = np.sqrt(mean_squared_error(results['y'], results['yhat']))
+    mape = np.mean(np.abs((results['y'] - results['yhat']) / results['y'].replace(0, np.nan))) * 100
+    accuracy = 100 - mape
+    
+    print(f"Accuracy: {accuracy:.2f}% | MAE: {mae:.3f} | RMSE: {rmse:.3f}")
 
+    # 3. Future Forecasting (Re-train on all data)
+    full_model = Prophet(yearly_seasonality=True, daily_seasonality=False, n_changepoints=10)
+    full_model.fit(data)
+    
+    days_to_forecast = (pd.to_datetime(TARGET_DATE) - data['ds'].max()).days
+    if days_to_forecast > 0:
+        future_dates = full_model.make_future_dataframe(periods=days_to_forecast, freq='D')
+        forecast = full_model.predict(future_dates)
+        
+        # Save results
+        forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_csv(f'forecast_{col}.csv', index=False)
+        
+        # Plotting
+        plt.figure(figsize=(12, 6))
+        plt.plot(data['ds'], data['y'], label='Historical', alpha=0.6)
+        plt.plot(forecast['ds'], forecast['yhat'], label='Forecast', color='red')
+        plt.title(f'{city}: {col} Forecast to 2030')
+        plt.legend()
+        plt.savefig(f'plot_{col}.png')
+        plt.close()
+        print(f"Forecast saved: forecast_{col}.csv and plot_{col}.png")
+    
+    return {"Accuracy": accuracy, "MAE": mae, "RMSE": rmse}
 
+# 4. Execute for each column
+target_cols = ['temperature_2m_mean', 'precipitation_sum']
+city_name = df['city'].iloc[0] if 'city' in df.columns else 'Sri Lanka'
+final_metrics = {}
 
-# Forecast temperature and precipitation up to 2030-12-31 and collect accuracy metrics
-metrics = {}
-forecast_column(df, 'temperature_2m_mean', forecast_until='2030-12-31', city=df['city'][0] if 'city' in df.columns else 'Sri Lanka', metrics_dict=metrics)
-forecast_column(df, 'precipitation_sum', forecast_until='2030-12-31', city=df['city'][0] if 'city' in df.columns else 'Sri Lanka', metrics_dict=metrics)
+for col in target_cols:
+    if col in df.columns:
+        final_metrics[col] = run_forecast(df, col, city=city_name)
 
-# Print and save accuracy metrics
-print("\nModel Accuracy (Test Set):")
+# 5. Export Metrics
 with open('forecast_accuracy_metrics.txt', 'w') as f:
-    for col, vals in metrics.items():
-        line = f"{col}: MAE = {vals['MAE']:.3f}, RMSE = {vals['RMSE']:.3f}"
-        print(line)
-        f.write(line + '\n')
-print("\nAccuracy metrics saved to forecast_accuracy_metrics.txt")
+    for col, m in final_metrics.items():
+        f.write(f"{col} Accuracy: {m['Accuracy']:.2f}%\n")
 
-print("Done. Forecasts and plots saved in the current directory.")
+print("\nAll tasks completed.")

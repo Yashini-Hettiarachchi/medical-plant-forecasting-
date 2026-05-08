@@ -1,50 +1,46 @@
 import pandas as pd
-import numpy as np
 
-# Load cleaned plant data
+# Load files
 df_plants = pd.read_csv('cleaned_sinhala_plants.csv')
-
-# Load climate forecast (up to 2030)
 df_climate = pd.read_csv('forecast_precipitation_sum_to_2030-12-31.csv')
-df_climate['year'] = pd.to_datetime(df_climate['ds']).dt.year
 
-# Define habitat/region types to group by
-habitat_cols = [col for col in df_plants.columns if col.startswith('Habitat/Region')]
+# 1. Setup Climate Data for 2026-2030
+df_climate['ds'] = pd.to_datetime(df_climate['ds'])
+df_climate['year'] = df_climate['ds'].dt.year
+future_precip = df_climate[df_climate['year'].between(2026, 2030)].groupby('year')['yhat'].mean()
 
-# Get all unique habitat/region types
-habitat_types = set()
-for col in habitat_cols:
-    habitat_types.update(df_plants[col].dropna().str.strip().unique())
-habitat_types = {h for h in habitat_types if isinstance(h, str) and h != ''}
+# 2. Extract and Count unique habitats
+# We flatten all 'Habitat/Region' columns and count occurrences of each unique type
+hab_cols = [c for c in df_plants.columns if 'Habitat' in c]
+all_habitats = pd.unique(df_plants[hab_cols].values.ravel())
+unique_habitats = [h for h in all_habitats if pd.notna(h) and str(h).strip()]
 
-# Group plants by habitat/region type
-plant_groups = {habitat: df_plants[
-    df_plants[habitat_cols].apply(lambda row: habitat in row.values, axis=1)
-]['Scientific Name'].tolist() for habitat in habitat_types}
+habitat_counts = {h: (df_plants[hab_cols] == h).any(axis=1).sum() for h in unique_habitats}
 
-# Define simple rules for suitability based on precipitation (mm/day)
-def get_suitability(habitat, precip):
-    if habitat.lower().startswith('dry'):
-        return 'Suitable' if precip < 2 else 'Unsuitable'
-    elif habitat.lower().startswith('wet'):
-        return 'Suitable' if precip > 4 else 'Unsuitable'
-    elif habitat.lower().startswith('intermediate'):
-        return 'Suitable' if 2 <= precip <= 4 else 'Unsuitable'
-    elif habitat.lower().startswith('coastal'):
-        return 'Likely Suitable'  # Not directly linked to precipitation
-    else:
-        return 'Unknown'
+# 3. Predict Suitability
+def predict_suitability(habitat, precip):
+    h = str(habitat).lower()
+    if 'dry' in h: return 'Suitable' if precip < 2.5 else 'Unsuitable'
+    if 'wet' in h: return 'Suitable' if precip > 4.0 else 'Unsuitable'
+    if 'intermediate' in h: return 'Suitable' if 2.5 <= precip <= 4.0 else 'Unsuitable'
+    return 'Likely Suitable' if 'coastal' in h else 'Stable'
 
-# For each year, get mean precipitation and predict suitability for each group
+# 4. Generate Final List
 results = []
-years = sorted(df_climate['year'].unique())
-for year in years:
-    precip = df_climate[df_climate['year'] == year]['yhat'].mean()
-    for habitat in sorted(habitat_types):
-        suitability = get_suitability(habitat, precip)
-        results.append({'Year': year, 'Habitat/Region': habitat, 'Mean_Precipitation': precip, 'Suitability': suitability, 'Plant_Count': len(plant_groups[habitat])})
+for year, avg_precip in future_precip.items():
+    for hab, count in habitat_counts.items():
+        results.append({
+            'Year': year,
+            'Habitat_Region': hab,
+            'Avg_Daily_Precip': round(avg_precip, 2),
+            'Status': predict_suitability(hab, avg_precip),
+            'Plant_Species_Count': count
+        })
 
-# Save results
-df_results = pd.DataFrame(results)
-df_results.to_csv('plant_group_climate_prediction_2030.csv', index=False)
-print('Prediction saved to plant_group_climate_prediction_2030.csv')
+# 5. Save and Display
+df_final = pd.DataFrame(results)
+df_final.to_csv('plant_suitability_2026_2030.csv', index=False)
+
+print("--- Prediction Summary (2026-2030) ---")
+print(df_final.head(10)) 
+print("\nFull results saved to: plant_suitability_2026_2030.csv")
