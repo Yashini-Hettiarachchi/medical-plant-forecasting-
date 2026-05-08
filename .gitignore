@@ -39,7 +39,6 @@ venv.bak/
 
 # Data, results, and code-generated files
 *.csv
-*.xlsx
 *.png
 *.txt
 *.log
