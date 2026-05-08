@@ -1,0 +1,65 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VS Code settings
+.vscode/
+
+
+# Data, results, and code-generated files
+*.csv
+*.xlsx
+*.png
+*.txt
+*.log
+*.ipynb
+forecast_*
+test_forecast_*
+train_test_*
+cleaned_*
+
+# Only keep essential source files (e.g., .py, .md, .gitignore) in the repo
+
+# Prophet and matplotlib cache
+prophet_cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Ignore Python wheel files
+*.whl
