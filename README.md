@@ -89,6 +89,32 @@ BACKEND_BASE_URL=http://localhost:8000
 
 The frontend will proxy to `GET /dashboard` on that backend when available and fall back to the local CSV outputs in this repository when it is not.
 
+## Hosting Fix (Frontend in Subfolder)
+
+This repository has Python code at the root and the Next.js app in `frontend/`.
+Some hosting providers try to build from the repository root by default, which fails for the frontend.
+
+This is now fixed with repository-level hosting config:
+
+- `vercel.json` sets `rootDirectory` to `frontend`.
+- `netlify.toml` sets `base` to `frontend` and enables the Next.js plugin.
+
+### Vercel
+
+Deploy from the repository root. Vercel will automatically use `frontend/` as the app root due to `vercel.json`.
+
+### Netlify
+
+Deploy from the repository root. Netlify will automatically use `frontend/` because of `netlify.toml`.
+
+### Required environment variable (optional)
+
+Set this only if you have a live backend API:
+
+```bash
+BACKEND_BASE_URL=https://your-backend-url
+```
+
 ---
 
 **Authors:** Yashini Hettiarachchi et al.

@@ -8,7 +8,7 @@ export default async function Home() {
   return (
     <main className="dashboard-shell min-h-screen text-slate-100">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-10">
-        <header className="glass-panel fade-in rounded-[2rem] p-8 md:p-10">
+        <header className="glass-panel fade-in rounded-4xl p-8 md:p-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-sm uppercase tracking-[0.32em] text-cyan-200/70">
@@ -17,43 +17,11 @@ export default async function Home() {
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white md:text-6xl">
                 Climate forecasting and medicinal plant suitability in one dashboard.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
+              {/* <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300 md:text-lg">
                 This Next.js frontend reads the forecasting outputs produced by the Python
                 pipeline and can proxy to a live backend through a single API contract.
-              </p>
+              </p> */}
             </div>
-
-            <div className="grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-200">
-              <div className="flex items-center justify-between gap-6">
-                <span>Data source</span>
-                <span className="font-medium text-emerald-300">{dashboard.source}</span>
-              </div>
-              <div className="flex items-center justify-between gap-6">
-                <span>Backend</span>
-                <span className="font-medium text-sky-300">
-                  {dashboard.backendBaseUrl ?? "local fallback"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-6">
-                <span>API route</span>
-                <span className="font-medium text-white">/api/dashboard</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-300">
-            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-              Forecast metrics
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-              Plant catalog
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-              Habitat suitability 2026-2030
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
-              Backend-ready proxy
-            </span>
           </div>
         </header>
 
@@ -68,7 +36,7 @@ export default async function Home() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-          <article className="glass-panel rounded-[2rem] p-6 md:p-8">
+          <article className="glass-panel rounded-4xl p-6 md:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.26em] text-sky-200/70">Suitability</p>
@@ -118,7 +86,7 @@ export default async function Home() {
                       <span className="hidden sm:block">
                         <div className="h-2 rounded-full bg-white/10">
                           <div
-                            className="h-2 rounded-full bg-gradient-to-r from-cyan-300 to-emerald-300"
+                            className="h-2 rounded-full bg-linear-to-r from-cyan-300 to-emerald-300"
                             style={{ width: `${Math.max(share, index === 0 ? 20 : 8)}%` }}
                           />
                         </div>
@@ -130,7 +98,7 @@ export default async function Home() {
             </div>
           </article>
 
-          <article className="glass-panel rounded-[2rem] p-6 md:p-8">
+          <article className="glass-panel rounded-4xl p-6 md:p-8">
             <p className="text-sm uppercase tracking-[0.26em] text-cyan-200/70">
               Forecast accuracy
             </p>
@@ -152,7 +120,7 @@ export default async function Home() {
           </article>
         </section>
 
-        <section className="glass-panel rounded-[2rem] p-6 md:p-8" id="forecast-table">
+        <section className="glass-panel rounded-4xl p-6 md:p-8" id="forecast-table">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.26em] text-sky-200/70">Plant catalog</p>
@@ -186,8 +154,8 @@ export default async function Home() {
               <span className="col-span-3 text-right">Status</span>
             </div>
             <div className="divide-y divide-white/10">
-              {dashboard.forecastRows.map((row) => (
-                <div key={`${row.year}-${row.habitatRegion}`} className="grid grid-cols-12 gap-4 px-5 py-4 text-sm">
+              {dashboard.forecastRows.map((row, index) => (
+                <div key={`${row.year}-${row.habitatRegion}-${row.status}-${row.avgDailyPrecip}-${index}`} className="grid grid-cols-12 gap-4 px-5 py-4 text-sm">
                   <span className="col-span-2 font-medium text-white">{row.year}</span>
                   <span className="col-span-5 text-slate-300">{row.habitatRegion}</span>
                   <span className="col-span-2 text-right text-slate-300">{row.avgDailyPrecip}</span>
