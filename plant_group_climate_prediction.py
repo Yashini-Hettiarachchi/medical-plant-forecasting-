@@ -2,7 +2,7 @@ import pandas as pd
 
 # Load files
 df_plants = pd.read_csv('cleaned_sinhala_plants.csv')
-df_climate = pd.read_csv('forecast_precipitation_sum.csv')
+df_climate = pd.read_csv('forecast_temperature_2m_mean.csv')
 
 # 1. Setup Climate Data for 2026-2030
 df_climate['ds'] = pd.to_datetime(df_climate['ds'])

@@ -24,18 +24,18 @@ Climate change is expected to significantly impact the distribution and suitabil
 
 3. **Plant Grouping and Suitability Prediction**
    - Plants are grouped by distinct habitat/region types (e.g., Dry, Wet, Intermediate, Coastal).
-   - The `plant_group_climate_prediction.py` script uses a **rule-based classifier** (custom logic based on precipitation thresholds) to predict the suitability of each habitat group for each year up to 2030, based on forecasted precipitation.
-   - Output is saved as `plant_group_climate_prediction_2026_2030.csv` (for years 2026–2030 only) and previously as `plant_group_climate_prediction_2030.csv` (for all years).
+   - The `plant_group_climate_prediction.py` script can use either forecasted precipitation or temperature (by changing the input file to `forecast_precipitation_sum.csv` or `forecast_temperature_2m_mean.csv`).
+   - The rule-based classifier logic is based on thresholds originally designed for precipitation. If using temperature, update the logic in the script to use temperature-appropriate thresholds for suitability.
+   - Output is saved as `plant_suitability_2026_2030.csv` (for years 2026–2030 only).
 
 
 
 ## Final Output
 
 - **Forecasted climate data**
-   - `forecast_temperature_2m_mean_to_2030-12-31.csv` and `forecast_precipitation_sum_to_2030-12-31.csv`: Daily forecasts up to 2030 for temperature and precipitation.
+   - `forecast_temperature_2m_mean.csv` and `forecast_precipitation_sum.csv`: Daily forecasts up to 2030 for temperature and precipitation.
 - **Group-wise suitability predictions**
-   - `plant_group_climate_prediction_2026_2030.csv`: Suitability of each habitat/region group for years 2026–2030.
-   - `plant_group_climate_prediction_2030.csv`: Suitability for all years (if needed for reference).
+   - `plant_suitability_2026_2030.csv`: Suitability of each habitat/region group for years 2026–2030, based on the selected climate variable.
 - **Model accuracy metrics**
    - `forecast_accuracy_metrics.txt`: Only the accuracy percentage for each variable (e.g., "temperature_2m_mean Accuracy = 95.20%").
 
@@ -69,6 +69,25 @@ All outputs will be saved in the working directory.
 ## Future Scope
 
 - Develop a web dashboard for interactive exploration of predictions.
+
+## Frontend Dashboard
+
+A Next.js frontend is available in `frontend/`.
+
+Run it with:
+
+```bash
+cd frontend
+npm run dev
+```
+
+If you have a live backend API, create `frontend/.env.local` and set:
+
+```bash
+BACKEND_BASE_URL=http://localhost:8000
+```
+
+The frontend will proxy to `GET /dashboard` on that backend when available and fall back to the local CSV outputs in this repository when it is not.
 
 ---
 
