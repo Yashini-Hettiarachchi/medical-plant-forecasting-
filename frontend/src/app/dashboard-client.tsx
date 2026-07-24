@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { DashboardPayload } from "@/lib/dashboard";
 
@@ -15,54 +15,18 @@ type ZoneDefinition = {
   key: ZoneKey;
   label: string;
   keywords: string[];
-  lon: number;
-  lat: number;
-};
-
-type Ring = Array<[number, number]>;
-
-type SriLankaGeoJson = {
-  features: Array<{
-    geometry: {
-      type: "Polygon" | "MultiPolygon";
-      coordinates: number[][][] | number[][][][];
-    };
-  }>;
+  cx: number;
+  cy: number;
 };
 
 const zoneDefinitions: ZoneDefinition[] = [
-  { key: "upcountry", label: "Upcountry", keywords: ["upcountry", "montane", "highland"], lon: 80.7, lat: 7.2 },
-  { key: "wet", label: "Wet", keywords: ["wet", "rainforest", "marsh", "lowland"], lon: 79.95, lat: 6.95 },
-  { key: "intermediate", label: "Intermediate", keywords: ["intermediate"], lon: 80.45, lat: 7.55 },
-  { key: "dry", label: "Dry", keywords: ["dry", "tank", "scrub", "grassland"], lon: 80.75, lat: 8.25 },
-  { key: "coastal", label: "Coastal", keywords: ["coastal", "lagoon", "mangrove", "estuar", "saline"], lon: 80.4, lat: 6.1 },
-  { key: "arid", label: "Arid", keywords: ["arid"], lon: 79.95, lat: 8.95 },
+  { key: "upcountry", label: "Upcountry", keywords: ["upcountry", "montane", "highland"], cx: 132, cy: 110 },
+  { key: "wet", label: "Wet", keywords: ["wet", "rainforest", "marsh", "lowland"], cx: 98, cy: 158 },
+  { key: "intermediate", label: "Intermediate", keywords: ["intermediate"], cx: 146, cy: 162 },
+  { key: "dry", label: "Dry", keywords: ["dry", "tank", "scrub", "grassland"], cx: 174, cy: 128 },
+  { key: "coastal", label: "Coastal", keywords: ["coastal", "lagoon", "mangrove", "estuar", "saline"], cx: 88, cy: 225 },
+  { key: "arid", label: "Arid", keywords: ["arid"], cx: 186, cy: 84 },
 ];
-
-function extractRings(geo: SriLankaGeoJson): Ring[] {
-  const rings: Ring[] = [];
-
-  geo.features.forEach((feature) => {
-    const geometry = feature.geometry;
-
-    if (geometry.type === "Polygon") {
-      const polygonRings = geometry.coordinates as number[][][];
-      polygonRings.forEach((ring) => {
-        rings.push(ring.map((point) => [point[0], point[1]] as [number, number]));
-      });
-      return;
-    }
-
-    const multipolygon = geometry.coordinates as number[][][][];
-    multipolygon.forEach((polygon) => {
-      polygon.forEach((ring) => {
-        rings.push(ring.map((point) => [point[0], point[1]] as [number, number]));
-      });
-    });
-  });
-
-  return rings;
-}
 
 function getRowZone(habitat: string): ZoneKey | null {
   const normalized = habitat.toLowerCase();
@@ -111,79 +75,6 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
   const [habitatFilter, setHabitatFilter] = useState("All habitats");
   const [statusFilter, setStatusFilter] = useState("All status groups");
   const [zoneFilter, setZoneFilter] = useState<ZoneKey | "all">("all");
-  const [mapRings, setMapRings] = useState<Ring[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadMap() {
-      try {
-        const response = await fetch("/maps/sri-lanka.geo.json", { cache: "force-cache" });
-        if (!response.ok) {
-          return;
-        }
-
-        const geo = (await response.json()) as SriLankaGeoJson;
-        if (active) {
-          setMapRings(extractRings(geo));
-        }
-      } catch {
-        // Fallback is handled by using empty ring data.
-      }
-    }
-
-    loadMap();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const mapViewBox = { width: 260, height: 320, padding: 12 };
-
-  const mapBounds = useMemo(() => {
-    if (mapRings.length === 0) {
-      return null;
-    }
-
-    const points = mapRings.flat();
-    const longitudes = points.map((point) => point[0]);
-    const latitudes = points.map((point) => point[1]);
-
-    return {
-      minLon: Math.min(...longitudes),
-      maxLon: Math.max(...longitudes),
-      minLat: Math.min(...latitudes),
-      maxLat: Math.max(...latitudes),
-    };
-  }, [mapRings]);
-
-  const projectPoint = (lon: number, lat: number) => {
-    if (!mapBounds) {
-      return { x: mapViewBox.width / 2, y: mapViewBox.height / 2 };
-    }
-
-    const innerWidth = mapViewBox.width - mapViewBox.padding * 2;
-    const innerHeight = mapViewBox.height - mapViewBox.padding * 2;
-    const x =
-      mapViewBox.padding +
-      ((lon - mapBounds.minLon) / Math.max(mapBounds.maxLon - mapBounds.minLon, 0.001)) * innerWidth;
-    const y =
-      mapViewBox.padding +
-      (1 - (lat - mapBounds.minLat) / Math.max(mapBounds.maxLat - mapBounds.minLat, 0.001)) * innerHeight;
-
-    return { x, y };
-  };
-
-  const mapPaths = useMemo(() => {
-    return mapRings.map((ring) => {
-      const commands = ring.map((point, index) => {
-        const projected = projectPoint(point[0], point[1]);
-        return `${index === 0 ? "M" : "L"} ${projected.x.toFixed(2)} ${projected.y.toFixed(2)}`;
-      });
-      return `${commands.join(" ")} Z`;
-    });
-  }, [mapRings, mapBounds]);
 
   const medicinalPlants = dashboard.medicinalPlants ?? dashboard.samplePlants.map((item) => ({
     scientificName: item.scientificName,
@@ -420,36 +311,25 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
 
           <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
             <div className="rounded-3xl border border-white/10 bg-slate-950/30 p-4">
-              <svg
-                viewBox={`0 0 ${mapViewBox.width} ${mapViewBox.height}`}
-                role="img"
-                aria-label="Sri Lanka suitability map for 2030"
-                className="h-full w-full"
-              >
+              <svg viewBox="0 0 260 320" role="img" aria-label="Sri Lanka suitability map for 2030" className="h-full w-full">
                 <defs>
                   <linearGradient id="islandTone" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" stopColor="#155e75" />
                     <stop offset="100%" stopColor="#083344" />
                   </linearGradient>
                 </defs>
-                {mapPaths.map((pathValue, index) => (
-                  <path
-                    key={`lka-shape-${index}`}
-                    d={pathValue}
-                    fill="url(#islandTone)"
-                    stroke="#67e8f9"
-                    strokeOpacity="0.35"
-                    strokeWidth="1"
-                  />
-                ))}
+                <path
+                  d="M162 14 L197 31 L218 65 L224 101 L220 130 L231 166 L224 196 L210 232 L188 270 L168 298 L145 310 L124 304 L107 286 L95 260 L79 236 L66 212 L53 183 L47 153 L42 122 L46 96 L57 72 L77 49 L104 29 L133 17 Z"
+                  fill="url(#islandTone)"
+                  stroke="#67e8f9"
+                  strokeOpacity="0.35"
+                  strokeWidth="2"
+                />
                 {mapZones.map((zone) => (
                   <g key={zone.key}>
-                    {(() => {
-                      const projected = projectPoint(zone.lon, zone.lat);
-                      return (
                     <circle
-                      cx={projected.x}
-                      cy={projected.y}
+                      cx={zone.cx}
+                      cy={zone.cy}
                       r={zoneFilter === zone.key ? 22 : 18}
                       fill={statusFill(zone.dominantStatus)}
                       fillOpacity={zoneFilter === zone.key ? 0.95 : 0.8}
@@ -459,14 +339,9 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
                       className="cursor-pointer transition"
                       onClick={() => setZoneFilter(zone.key)}
                     />
-                      );
-                    })()}
-                    {(() => {
-                      const projected = projectPoint(zone.lon, zone.lat);
-                      return (
                     <text
-                      x={projected.x}
-                      y={projected.y + 4}
+                      x={zone.cx}
+                      y={zone.cy + 4}
                       textAnchor="middle"
                       fill="#ecfeff"
                       fontSize="8"
@@ -474,8 +349,6 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
                     >
                       {zone.label}
                     </text>
-                      );
-                    })()}
                   </g>
                 ))}
               </svg>
