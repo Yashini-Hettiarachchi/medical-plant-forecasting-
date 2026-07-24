@@ -3,54 +3,45 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import SriLankaMap from "@/components/sri-lanka-map";
 import type { DashboardPayload } from "@/lib/dashboard";
 
 type DashboardClientProps = {
   dashboard: DashboardPayload;
 };
 
-type ZoneKey = "wet" | "intermediate" | "dry" | "upcountry" | "coastal" | "arid";
-
-type ZoneDefinition = {
-  key: ZoneKey;
-  label: string;
-  keywords: string[];
-  cx: number;
-  cy: number;
+// District keyword mappings for filtering
+const districtKeywords: Record<string, string[]> = {
+  "Colombo": ["colombo", "western"],
+  "Gampaha": ["gampaha", "western"],
+  "Kalutara": ["kalutara", "western"],
+  "Kandy": ["kandy", "central", "upcountry"],
+  "Matara": ["matara", "southern", "south"],
+  "Galle": ["galle", "southern", "south"],
+  "Jaffna": ["jaffna", "northern"],
+  "Mullaitivu": ["mullaitivu", "eastern"],
+  "Trincomalee": ["trincomalee", "eastern"],
+  "Batticaloa": ["batticaloa", "eastern"],
+  "Ampara": ["ampara", "eastern"],
+  "Anuradhapura": ["anuradhapura", "north central", "dry"],
+  "Polonnaruwa": ["polonnaruwa", "north central", "dry"],
+  "Kurunegala": ["kurunegala", "north western", "intermediate"],
+  "Kegalle": ["kegalle", "central"],
+  "Nuwara Eliya": ["nuwara eliya", "upcountry", "central"],
+  "Badulla": ["badulla", "upcountry", "eastern"],
+  "Monaragala": ["monaragala", "eastern", "dry"],
+  "Ratnapura": ["ratnapura", "sabaragamuwa", "wet"],
+  "Puttalam": ["puttalam", "north western", "dry"],
 };
 
-const zoneDefinitions: ZoneDefinition[] = [
-  { key: "upcountry", label: "Upcountry", keywords: ["upcountry", "montane", "highland"], cx: 132, cy: 110 },
-  { key: "wet", label: "Wet", keywords: ["wet", "rainforest", "marsh", "lowland"], cx: 98, cy: 158 },
-  { key: "intermediate", label: "Intermediate", keywords: ["intermediate"], cx: 146, cy: 162 },
-  { key: "dry", label: "Dry", keywords: ["dry", "tank", "scrub", "grassland"], cx: 174, cy: 128 },
-  { key: "coastal", label: "Coastal", keywords: ["coastal", "lagoon", "mangrove", "estuar", "saline"], cx: 88, cy: 225 },
-  { key: "arid", label: "Arid", keywords: ["arid"], cx: 186, cy: 84 },
-];
-
-function getRowZone(habitat: string): ZoneKey | null {
+function getRowDistrict(habitat: string): string | null {
   const normalized = habitat.toLowerCase();
-  const zone = zoneDefinitions.find((candidate) =>
-    candidate.keywords.some((keyword) => normalized.includes(keyword)),
-  );
-  return zone?.key ?? null;
-}
-
-function statusFill(status: string) {
-  const normalized = status.toLowerCase();
-  if (normalized.includes("suitable") && !normalized.includes("un")) {
-    return "#10b981";
+  for (const [district, keywords] of Object.entries(districtKeywords)) {
+    if (keywords.some((keyword) => normalized.includes(keyword))) {
+      return district;
+    }
   }
-  if (normalized.includes("stable")) {
-    return "#06b6d4";
-  }
-  if (normalized.includes("likely")) {
-    return "#f59e0b";
-  }
-  if (normalized.includes("unsuitable") || normalized.includes("not")) {
-    return "#f43f5e";
-  }
-  return "#94a3b8";
+  return null;
 }
 
 function statusTone(status: string) {
@@ -74,7 +65,7 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
   const [plantQuery, setPlantQuery] = useState("");
   const [habitatFilter, setHabitatFilter] = useState("All habitats");
   const [statusFilter, setStatusFilter] = useState("All status groups");
-  const [zoneFilter, setZoneFilter] = useState<ZoneKey | "all">("all");
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
 
   const medicinalPlants = dashboard.medicinalPlants ?? dashboard.samplePlants.map((item) => ({
     scientificName: item.scientificName,
@@ -96,33 +87,6 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
     [dashboard.suitabilitySummary],
   );
 
-  const rows2030 = useMemo(
-    () => dashboard.forecastRows.filter((row) => row.year === 2030),
-    [dashboard.forecastRows],
-  );
-
-  const mapZones = useMemo(() => {
-    const summaries = zoneDefinitions.map((zone) => {
-      const matchingRows = rows2030.filter((row) => getRowZone(row.habitatRegion) === zone.key);
-      const rowCount = matchingRows.length;
-      const speciesCount = matchingRows.reduce((sum, row) => sum + row.plantSpeciesCount, 0);
-      const statusCount = matchingRows.reduce<Record<string, number>>((accumulator, row) => {
-        accumulator[row.status] = (accumulator[row.status] ?? 0) + 1;
-        return accumulator;
-      }, {});
-      const dominantStatus = Object.entries(statusCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "No data";
-
-      return {
-        ...zone,
-        rowCount,
-        speciesCount,
-        dominantStatus,
-      };
-    });
-
-    return summaries;
-  }, [rows2030]);
-
   const filteredPlants = useMemo(() => {
     const query = plantQuery.trim().toLowerCase();
 
@@ -136,21 +100,22 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
       const matchesHabitat =
         habitatFilter === "All habitats" || plant.habitats.includes(habitatFilter);
 
-      const matchesZone =
-        zoneFilter === "all" ||
-        plant.habitats.some((habitat) => getRowZone(habitat) === zoneFilter);
+      const matchesDistrict =
+        selectedDistrict === null ||
+        plant.habitats.some((habitat) => getRowDistrict(habitat) === selectedDistrict);
 
-      return matchesQuery && matchesHabitat && matchesZone;
+      return matchesQuery && matchesHabitat && matchesDistrict;
     });
-  }, [habitatFilter, medicinalPlants, plantQuery, zoneFilter]);
+  }, [habitatFilter, medicinalPlants, plantQuery, selectedDistrict]);
 
   const filteredForecastRows = useMemo(() => {
     return dashboard.forecastRows.filter((row) => {
       const matchesStatus = statusFilter === "All status groups" || row.status === statusFilter;
-      const matchesZone = zoneFilter === "all" || getRowZone(row.habitatRegion) === zoneFilter;
-      return matchesStatus && matchesZone;
+      const matchesDistrict =
+        selectedDistrict === null || getRowDistrict(row.habitatRegion) === selectedDistrict;
+      return matchesStatus && matchesDistrict;
     });
-  }, [dashboard.forecastRows, statusFilter, zoneFilter]);
+  }, [dashboard.forecastRows, statusFilter, selectedDistrict]);
 
   const suitabilityTotal = dashboard.suitabilitySummary.reduce((sum, current) => sum + current.count, 0);
 
@@ -294,87 +259,27 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.26em] text-sky-200/70">2030 geo view</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Sri Lanka prediction map</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Sri Lanka medicinal plant forecast map</h2>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-                Click a zone to focus plant and suitability tables on that geography. This map summarizes
-                forecasted 2030 climate suitability by dominant status and plant species signals.
+                Click a district to focus medicinal plants and suitability rows on that region. This map displays 
+                the dominant 2030 climate suitability forecast for each district's forecasted medicinal plant growth conditions.
               </p>
             </div>
             <button
               type="button"
-              onClick={() => setZoneFilter("all")}
+              onClick={() => setSelectedDistrict(null)}
               className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100 transition hover:bg-white/10"
             >
-              Show all zones
+              Clear selection
             </button>
           </div>
 
-          <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
-            <div className="rounded-3xl border border-white/10 bg-slate-950/30 p-4">
-              <svg viewBox="0 0 260 320" role="img" aria-label="Sri Lanka suitability map for 2030" className="h-full w-full">
-                <defs>
-                  <linearGradient id="islandTone" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#155e75" />
-                    <stop offset="100%" stopColor="#083344" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M162 14 L197 31 L218 65 L224 101 L220 130 L231 166 L224 196 L210 232 L188 270 L168 298 L145 310 L124 304 L107 286 L95 260 L79 236 L66 212 L53 183 L47 153 L42 122 L46 96 L57 72 L77 49 L104 29 L133 17 Z"
-                  fill="url(#islandTone)"
-                  stroke="#67e8f9"
-                  strokeOpacity="0.35"
-                  strokeWidth="2"
-                />
-                {mapZones.map((zone) => (
-                  <g key={zone.key}>
-                    <circle
-                      cx={zone.cx}
-                      cy={zone.cy}
-                      r={zoneFilter === zone.key ? 22 : 18}
-                      fill={statusFill(zone.dominantStatus)}
-                      fillOpacity={zoneFilter === zone.key ? 0.95 : 0.8}
-                      stroke="#e0f2fe"
-                      strokeOpacity="0.6"
-                      strokeWidth="1.5"
-                      className="cursor-pointer transition"
-                      onClick={() => setZoneFilter(zone.key)}
-                    />
-                    <text
-                      x={zone.cx}
-                      y={zone.cy + 4}
-                      textAnchor="middle"
-                      fill="#ecfeff"
-                      fontSize="8"
-                      className="pointer-events-none"
-                    >
-                      {zone.label}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {mapZones.map((zone) => (
-                <button
-                  type="button"
-                  key={zone.key}
-                  onClick={() => setZoneFilter(zone.key)}
-                  className={`rounded-3xl border p-4 text-left transition hover:bg-white/10 ${
-                    zoneFilter === zone.key ? "border-cyan-200/60 bg-cyan-300/10" : "border-white/10 bg-slate-950/30"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-base font-semibold text-white">{zone.label}</p>
-                    <span className={`rounded-full border px-3 py-1 text-xs ${statusTone(zone.dominantStatus)}`}>
-                      {zone.dominantStatus}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-300">2030 suitability rows: {zone.rowCount}</p>
-                  <p className="mt-1 text-sm text-slate-300">Species signal count: {zone.speciesCount}</p>
-                </button>
-              ))}
-            </div>
+          <div className="mt-6">
+            <SriLankaMap 
+              dashboard={dashboard} 
+              selectedZone={selectedDistrict} 
+              onZoneSelect={setSelectedDistrict} 
+            />
           </div>
         </section>
 
@@ -415,20 +320,22 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
             </label>
 
             <label className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
-              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Map zone focus</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Filter by district</span>
               <select
-                value={zoneFilter}
-                onChange={(event) => setZoneFilter(event.target.value as ZoneKey | "all")}
+                value={selectedDistrict ?? "All"}
+                onChange={(event) => setSelectedDistrict(event.target.value === "All" ? null : event.target.value)}
                 className="mt-2 w-full bg-transparent text-sm text-white outline-none"
               >
-                <option value="all" className="bg-slate-900 text-white">
-                  All zones
+                <option value="All" className="bg-slate-900 text-white">
+                  All districts
                 </option>
-                {mapZones.map((zone) => (
-                  <option key={zone.key} value={zone.key} className="bg-slate-900 text-white">
-                    {zone.label}
-                  </option>
-                ))}
+                {Object.keys(districtKeywords)
+                  .sort()
+                  .map((district) => (
+                    <option key={district} value={district} className="bg-slate-900 text-white">
+                      {district}
+                    </option>
+                  ))}
               </select>
             </label>
 
