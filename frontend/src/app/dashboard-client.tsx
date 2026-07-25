@@ -363,8 +363,8 @@ export default function DashboardClient({ dashboard }: DashboardClientProps) {
               <span className="col-span-2 text-right">Count</span>
             </div>
             <div className="max-h-130 divide-y divide-white/10 overflow-auto">
-              {filteredPlants.map((plant) => (
-                <div key={`${plant.scientificName}-${plant.sinhalaName}-${plant.habitats.join(',')}`} className="grid grid-cols-12 gap-4 px-5 py-4 text-sm">
+              {filteredPlants.map((plant, index) => (
+                <div key={`${plant.scientificName}-${plant.sinhalaName}-${plant.habitats.join(',')}-${index}`} className="grid grid-cols-12 gap-4 px-5 py-4 text-sm">
                   <span className="col-span-4 font-medium text-white">{plant.scientificName}</span>
                   <span className="col-span-3 text-slate-300">{plant.sinhalaName || "-"}</span>
                   <span className="col-span-3 text-slate-300">{plant.habitats.join(", ") || "-"}</span>
