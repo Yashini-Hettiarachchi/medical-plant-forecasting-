@@ -1,35 +1,59 @@
 # PowerPoint Content Outline (pptx.md)
 
-## Main Problem
-- Climate change threatens the distribution and survival of medicinal plants in Sri Lanka.
-- Lack of predictive tools for future habitat suitability under changing climate conditions.
-- Need for data-driven support for conservation and sustainable use of medicinal plants.
+## Title Slide
+- Bridging Data Science, Climate Forecasting, and Traditional Medicine
+- Sri Lanka Medicinal Plant Climate Observatory
+- Tagline: Predicting tomorrow's climate to protect tomorrow's healing biodiversity
 
-## Introduction
-- Medicinal plants are vital for traditional medicine and biodiversity in Sri Lanka.
-- Climate variability impacts plant growth, distribution, and survival.
-- Predicting future suitability helps guide conservation and policy decisions.
+## Main Problem
+- Sri Lanka's medicinal plants are the foundation of Ayurvedic treatment and botanical research.
+- Climate change is altering temperature and rainfall patterns, threatening natural plant habitats.
+- Medical and research communities lack practical, predictive tools to assess future plant survivability.
+
+## Why This Matters
+- Reduced habitat suitability can disrupt raw material availability for Ayurvedic hospitals and practitioners.
+- Loss of climate-sensitive species can weaken future drug discovery and pharmacological studies.
+- Delayed action increases conservation cost and risk to long-term public health resilience.
+
+## Platform Introduction
+- The Sri Lanka Medicinal Plant Climate Observatory is a data-driven web platform.
+- It connects climate science outputs with medical and botanical decision-making needs.
+- Target users: doctors, medical students, Ayurvedic practitioners, and plant researchers.
 
 ## Main Objective
-- Forecast future climate conditions and predict habitat suitability for medicinal plants in Sri Lanka up to 2030.
+- Forecast climate conditions and predict medicinal plant habitat suitability in Sri Lanka up to 2030.
 
-## Sub Objectives
-- Collect and preprocess plant and climate datasets for Sri Lanka.
-- Forecast daily temperature and precipitation up to 2030 using time series models.
-- Group plants by habitat/region types for analysis.
-- Develop rule-based models to predict suitability of each habitat group under future climate scenarios.
-- Evaluate and document model accuracy and results.
+## How It Works
+- Integrate and preprocess plant records and national weather data.
+- Forecast daily temperature and precipitation using Facebook Prophet.
+- Apply rule-based ecological suitability logic to plant habitat groups.
+- Produce future suitability scores by climate zone and region.
+
+## Key Capabilities
+- Interactive Geospatial Mapping:
+	Visualize projected Wet, Dry, and Intermediate zone impacts on medicinal flora.
+- Clinical and Botanical Filtering:
+	Search plants by scientific name, local name, and clinical use (e.g., anti-inflammatory, respiratory health, wound healing).
+- Predictive Dashboarding:
+	Explore district-level climate trends and their impact on habitat suitability.
+- Data-Driven Conservation:
+	Export analysis outputs to support conservation planning, supply-chain resilience, and policy recommendations.
 
 ## Current Progress
-- Cleaned and structured plant and climate datasets.
-- Implemented Prophet-based forecasting for temperature and precipitation.
-- Developed rule-based suitability prediction for plant groups by habitat.
-- Generated suitability predictions for 2026–2030.
-- Documented methodology and results in README.
+- Cleaned and structured medicinal plant and climate datasets.
+- Implemented Prophet-based forecasting workflows for temperature and precipitation.
+- Built rule-based habitat suitability prediction by plant group.
+- Generated 2026-2030 suitability projections and supporting output files.
+- Documented workflow, assumptions, and outputs for reproducibility.
 
 ## Future Progress
-- Refine suitability logic for temperature-based predictions.
-- Integrate additional climate variables (e.g., humidity, extreme events).
-- Develop a web dashboard for interactive results exploration.
-- Collaborate with botanists for validation and improvement.
-- Extend predictions beyond 2030 and to other regions.
+- Improve suitability scoring logic with stronger ecological thresholds.
+- Integrate additional variables: humidity, extreme weather indices, and seasonal anomalies.
+- Expand web experience with richer map interactivity and analytics views.
+- Validate predictions with botanists and clinical experts.
+- Extend the forecasting window beyond 2030 and scale to additional species groups.
+
+## Vision
+- Empower Sri Lanka's medical and scientific community with predictive biodiversity intelligence.
+- Safeguard medicinal plant availability for future clinical care, education, and research.
+- Build a long-term evidence base for climate-adaptive conservation and sustainable traditional medicine.

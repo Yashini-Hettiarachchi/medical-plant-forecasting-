@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sri Lanka Medicinal Plant Climate Observatory</title>
+    <meta
+      name="description"
+      content="Forecast-driven medicinal plant habitat observatory for Sri Lanka."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="aurora aurora-one"></div>
+    <div class="aurora aurora-two"></div>
+
+    <header class="hero reveal">
+      <p class="eyebrow">Data Science x Climate Forecasting x Traditional Medicine</p>
+      <h1>Sri Lanka Medicinal Plant Climate Observatory</h1>
+      <p class="hero-copy">
+        A predictive dashboard for doctors, Ayurvedic practitioners, medical students,
+        and botanical researchers to assess future medicinal plant habitat suitability
+        through 2030.
+      </p>
+      <div class="hero-actions">
+        <a href="#dashboard" class="btn btn-primary">Explore Dashboard</a>
+        <button id="downloadSuitabilityBtn" class="btn btn-ghost" type="button">
+          Export Filtered Suitability CSV
+        </button>
+      </div>
+    </header>
+
+    <main id="dashboard" class="dashboard">
+      <section class="kpi-grid reveal" id="kpiGrid">
+        <article class="kpi-card">
+          <h2>Total Species</h2>
+          <p id="kpiSpecies">-</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Forecast Horizon</h2>
+          <p id="kpiHorizon">-</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Most Vulnerable Zone</h2>
+          <p id="kpiRiskZone">-</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Avg Suitable Share</h2>
+          <p id="kpiSuitability">-</p>
+        </article>
+      </section>
+
+      <section class="panel-grid reveal">
+        <article class="panel filter-panel">
+          <h3>Clinical and Botanical Filter</h3>
+          <div class="filter-group">
+            <label for="yearFilter">Year</label>
+            <select id="yearFilter"></select>
+          </div>
+          <div class="filter-group">
+            <label for="statusFilter">Suitability Status</label>
+            <select id="statusFilter">
+              <option value="all">All</option>
+              <option value="Suitable">Suitable</option>
+              <option value="Likely Suitable">Likely Suitable</option>
+              <option value="Stable">Stable</option>
+              <option value="Unsuitable">Unsuitable</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="zoneFilter">Climate Zone</label>
+            <select id="zoneFilter">
+              <option value="all">All</option>
+              <option value="Dry">Dry</option>
+              <option value="Wet">Wet</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Coastal">Coastal</option>
+              <option value="Upcountry">Upcountry</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="plantSearch">Search Plant Name</label>
+            <input
+              id="plantSearch"
+              type="search"
+              placeholder="Scientific or Sinhala name"
+            />
+          </div>
+          <div class="filter-group">
+            <label for="clinicalFilter">Clinical Application</label>
+            <select id="clinicalFilter">
+              <option value="all">All</option>
+              <option value="anti-inflammatory">Anti-inflammatory</option>
+              <option value="respiratory">Respiratory Health</option>
+              <option value="digestive">Digestive Support</option>
+              <option value="wound-healing">Wound Healing</option>
+              <option value="metabolic">Metabolic Support</option>
+            </select>
+          </div>
+          <button id="resetFiltersBtn" class="btn btn-subtle" type="button">Reset Filters</button>
+        </article>
+
+        <article class="panel map-panel">
+          <div class="panel-head">
+            <h3>Interactive Geospatial Mapping</h3>
+            <p>Projected zone stability profile for selected year.</p>
+          </div>
+          <div id="sriLankaMap" aria-label="Sri Lanka climate suitability map"></div>
+          <p class="footnote">
+            Circle size indicates plant count represented by matched habitats.
+            Circle color indicates suitability pressure.
+          </p>
+        </article>
+      </section>
+
+      <section class="panel-grid reveal">
+        <article class="panel chart-panel">
+          <h3>Forecasted Temperature Through 2030</h3>
+          <canvas id="temperatureChart"></canvas>
+        </article>
+        <article class="panel chart-panel">
+          <h3>Forecasted Precipitation Through 2030</h3>
+          <canvas id="precipitationChart"></canvas>
+        </article>
+      </section>
+
+      <section class="panel reveal">
+        <div class="panel-head">
+          <h3>Suitability Trends by Year</h3>
+          <p>Yearly habitat-group status counts from the generated prediction file.</p>
+        </div>
+        <canvas id="suitabilityChart"></canvas>
+      </section>
+
+      <section class="panel reveal">
+        <div class="panel-head">
+          <h3>Medicinal Plant Browser</h3>
+          <p>Filtered by habitat-zone context and clinical use tags.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Scientific Name</th>
+                <th>Sinhala Name</th>
+                <th>Primary Habitat</th>
+                <th>Clinical Tag</th>
+                <th>Selected Year Status</th>
+              </tr>
+            </thead>
+            <tbody id="plantTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer reveal">
+      <p>
+        Our vision: empower Sri Lanka's medical and scientific community with predictive
+        tools to protect medicinal biodiversity for future generations.
+      </p>
+    </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.5.3/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
