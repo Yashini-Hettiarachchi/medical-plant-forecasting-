@@ -250,6 +250,14 @@ body::before {
   min-height: 350px;
 }
 
+.chart-panel-compact {
+  min-height: 255px;
+}
+
+.chart-panel-compact canvas {
+  height: 180px !important;
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -353,6 +361,10 @@ td {
   #sriLankaMap {
     height: 380px;
   }
+
+  .chart-panel-compact canvas {
+    height: 160px !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -376,5 +388,13 @@ td {
 
   #sriLankaMap {
     height: 320px;
+  }
+
+  .chart-panel-compact {
+    min-height: 220px;
+  }
+
+  .chart-panel-compact canvas {
+    height: 150px !important;
   }
 }
